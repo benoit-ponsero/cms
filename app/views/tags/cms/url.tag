@@ -6,4 +6,4 @@
     }
 
 }%
-${ plugins.cms.Tags.url(_action) }
+${ plugins.cms.Tag.url(_action) }
