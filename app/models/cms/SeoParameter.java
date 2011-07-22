@@ -11,7 +11,7 @@ import play.db.jpa.Model;
  * @author benoit
  */
 @Entity
-@Table(name="nemo_seo_parameter",uniqueConstraints=@UniqueConstraint(columnNames={"path", "language", "contextPath"}))
+@Table(name="nemo_seo_parameter",uniqueConstraints=@UniqueConstraint(columnNames={"path", "language"}))
 public class SeoParameter extends Model {
 
     @Column(nullable=false,length=128)

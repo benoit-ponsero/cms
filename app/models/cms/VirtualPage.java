@@ -16,9 +16,6 @@ public class VirtualPage extends Model {
     @Column(nullable=false,length=128)
     public String path;
 
-    @Column(length=255)
-    public String controller;
-
     @Column(nullable=false,length=255)
     public String view;
 }

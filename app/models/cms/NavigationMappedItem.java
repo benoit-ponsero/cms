@@ -24,7 +24,4 @@ public class NavigationMappedItem extends Model {
 
     @Column(nullable=false)
     public boolean redirect = false;
-
-    @Column(nullable=false)
-    public boolean volatil = false;
 }

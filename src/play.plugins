@@ -1,2 +1,3 @@
 10:plugins.router.Plugin
-20:plugins.press.Plugin
+20:plugins.cms.CustomRouting
+30:plugins.press.Plugin

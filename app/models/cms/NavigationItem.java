@@ -11,7 +11,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import play.db.jpa.Model;
-import plugins.cms.NavigationPlugin;
+import plugins.cms.navigation.NavigationPlugin;
 
 /** 
  * @author benoit
@@ -59,5 +59,14 @@ public class NavigationItem extends Model {
         }
 
         return false;
+    }
+    
+    public static List<NavigationItem> findByParent(NavigationItem item){
+        
+        return NavigationItem.find(
+            "SELECT n "
+                + "FROM NavigationItem n "
+                + "WHERE n.parent = ?"
+            , item).fetch();
     }
 }

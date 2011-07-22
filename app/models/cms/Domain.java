@@ -2,12 +2,14 @@ package models.cms;
 
 import java.util.List;
 import javax.persistence.Column;
-import javax.persistence.OneToMany;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
 import play.db.jpa.Model;
 
 /**
  * @author benoit
  */
+@Entity
 public class Domain extends Model {
     
     @Column(nullable=false, length=255, unique=true)
@@ -19,6 +21,6 @@ public class Domain extends Model {
     @Column(nullable=false)
     public boolean doTracking = false;
 
-    @OneToMany
+    @ElementCollection
     public List<String> supportedLocales;
 }

@@ -26,4 +26,10 @@ public class Editor extends Model {
     @Lob
     @Column(nullable=false)
     public String content;
+    
+    
+    public static Editor findByPathAndCodeAndLanguage(String path, String code, String lang){
+        
+        return Editor.find("byPathAndCodeAndLanguage", path, code, lang).first();
+    }
 }

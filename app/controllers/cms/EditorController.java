@@ -1,11 +1,13 @@
 package controllers.cms;
 
+import models.cms.Editor;
 import play.mvc.Controller;
+import plugins.router.Route;
 
 /**
  * @author benoit
  */
-//@WebServlet("/--editor/*")
+@Route("/--editor/*")
 public class EditorController extends Controller {
 
 //    public static final String TMP_LOCATION = "/tmp/nemo-upload";
@@ -13,49 +15,36 @@ public class EditorController extends Controller {
 //    private static final String TYPE_UNKNOWN = "UNKNOWN";
 //    private static final String TYPE_IMAGE = "IMAGE";
 //
-//    @Route("save")
-//    public void save(String path, String lang) throws IOException {
-//
-//        String contextPath = request.getContextPath();
-//        String language    = request.getParameter("language");
-//        String path        = request.getParameter("path");
-//        int    i           = 0;
-//
-//        while (true) {
-//            
-//            String code     = request.getParameter("editors[" + i + "][code]");
-//            String content  = request.getParameter("editors[" + i + "][content]");
-//            String isStatic = request.getParameter("editors[" + i + "][isStatic]");
-//
-//            i++;
-//
-//            if (code == null) {
-//                break;
-//            }
-//
-//            String currentPath = ("1".equals(isStatic)) ? null : path;
-//            Editor editor      = editorFacade.findByPathAndCodeAndLanguageAndContextPath(currentPath, code, language, contextPath);
-//
-//            if (editor == null) {
-//
-//                editor = new Editor();
-//
-//                editor.setPath(currentPath);
-//                editor.setCode(code);
-//                editor.setLanguage(language);
-//                editor.setContextPath(contextPath);
-//            }
-//
-//            editor.setContent(content);
-//            editorFacade.save(editor);
-//        }
-//
-//        PrintWriter writer = response.getWriter();
-//
-//        writer.print("OK");
-//        writer.flush();
-//        writer.close();
-//    }
+    @Route("save")
+    public static void save(String path, String lang) {
+
+        int i = 0;
+        while (true) {
+            
+            String code     = params.get("editors[" + i + "][code]");
+            String content  = params.get("editors[" + i + "][content]");
+
+            i++;
+
+            if (code == null) {
+                break;
+            }
+
+            Editor editor = Editor.findByPathAndCodeAndLanguage(path, code, lang);
+
+            if (editor == null) {
+
+                editor = new Editor();
+
+                editor.path     = path;
+                editor.code     = code;
+                editor.language = lang;
+            }
+
+            editor.content = content;
+            editor.save();
+        }
+    }
 //
 //    @Action("browser")
 //    public View browser(HttpServletRequest request, HttpServletResponse response) {
