@@ -8,7 +8,6 @@ import models.cms.NavigationMappedItem;
 import models.cms.VirtualPage;
 import play.Logger;
 import play.PlayPlugin;
-import play.i18n.Lang;
 import play.mvc.Http.Request;
 import play.mvc.Router;
 import play.mvc.Router.Route;

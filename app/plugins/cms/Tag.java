@@ -50,6 +50,11 @@ public class Tag {
         return content;
     }
     
+    public static String translate(String code){
+        
+        return code;
+    }
+    
     private static String generateCommon(){
         
         Http.Request request = Http.Request.current();
@@ -71,4 +76,6 @@ public class Tag {
         
         return value.toString();
     }
+    
+    
 }
