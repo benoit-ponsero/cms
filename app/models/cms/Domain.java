@@ -4,6 +4,7 @@ import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.JoinTable;
 import javax.persistence.Table;
 import play.db.jpa.Model;
 
@@ -24,5 +25,6 @@ public class Domain extends Model {
     public boolean doTracking = false;
 
     @ElementCollection
+    @JoinTable(name="cms_supported_locale")
     public List<String> supportedLocales;
 }
