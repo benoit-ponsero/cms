@@ -4,12 +4,14 @@ import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.Table;
 import play.db.jpa.Model;
 
 /**
  * @author benoit
  */
 @Entity
+@Table(name="cms_domain")
 public class Domain extends Model {
     
     @Column(nullable=false, length=255, unique=true)

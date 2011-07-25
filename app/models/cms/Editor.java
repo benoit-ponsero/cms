@@ -11,7 +11,7 @@ import play.db.jpa.Model;
  * @author benoit
  */
 @Entity
-@Table(name="nemo_editor",uniqueConstraints=@UniqueConstraint(columnNames={"path", "code", "language"}))
+@Table(name="cms_editor",uniqueConstraints=@UniqueConstraint(columnNames={"path", "code", "language"}))
 public class Editor extends Model {
 
     @Column(length=128)

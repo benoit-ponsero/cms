@@ -17,7 +17,7 @@ import plugins.cms.navigation.NavigationPlugin;
  * @author benoit
  */
 @Entity
-@Table(name="nemo_navigation_item",
+@Table(name="cms_navigation_item",
        uniqueConstraints=@UniqueConstraint(columnNames={"path"}))
 public class NavigationItem extends Model {
 

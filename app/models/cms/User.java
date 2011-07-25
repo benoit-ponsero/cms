@@ -12,7 +12,7 @@ import play.db.jpa.Model;
  * @author benoit
  */
 @Entity
-@Table(name="nemo_user")
+@Table(name="cms_user")
 public class User extends Model {
 
     @Column(nullable=false,length=64)

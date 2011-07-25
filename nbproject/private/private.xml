@@ -2,7 +2,9 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
-        <file>file:/Users/benoit/Applications/playApps/cms/app/controllers/cms/CmsController.java</file>
-        <file>file:/Users/benoit/Applications/playApps/cms/app/controllers/cms/EditorController.java</file>
+        <file>file:/Users/benoit/Applications/playApps/cms/app/plugins/cms/CustomRouting.java</file>
+        <file>file:/Users/benoit/Applications/playApps/cms/app/views/tags/cms/url.tag</file>
+        <file>file:/Users/benoit/Applications/playApps/cms/app/views/tags/cms/translate.tag</file>
+        <file>file:/Users/benoit/Applications/playApps/cms/app/plugins/cms/Tag.java</file>
     </open-files>
 </project-private>

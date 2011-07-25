@@ -10,7 +10,7 @@ import play.db.jpa.Model;
  * @author benoit
  */
 @Entity
-@Table(name="nemo_virtual_page",uniqueConstraints=@UniqueConstraint(columnNames={"path"}))
+@Table(name="cms_virtual_page",uniqueConstraints=@UniqueConstraint(columnNames={"path"}))
 public class VirtualPage extends Model {
 
     @Column(nullable=false,length=128)
