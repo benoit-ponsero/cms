@@ -3,6 +3,7 @@ package plugins.cms;
 
 import plugins.cms.navigation.NavigationCache;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import models.cms.NavigationItem;
 import models.cms.NavigationMappedItem;
@@ -12,7 +13,9 @@ import play.PlayPlugin;
 import play.mvc.Http.Request;
 import play.mvc.Router;
 import play.mvc.Router.Route;
+import play.mvc.Scope;
 import play.mvc.Scope.RenderArgs;
+
 
 /**
  * @author benoit
@@ -26,6 +29,14 @@ public class CustomRouting extends PlayPlugin {
         String lang     = "fr";//Lang.get();
         String resource = request.path;
         
+       
+        VirtualPage virtualPage = NavigationCache.getVirtualPage(resource);
+        if (virtualPage != null){
+            
+            // handle virtual page
+            request.path = Router.reverse("cms.CmsController.virtualPage").url;
+            return;
+        }
         
         NavigationMappedItem mappedItem = NavigationCache.getMappedItem(lang, resource);
         if (mappedItem != null){
@@ -40,23 +51,32 @@ public class CustomRouting extends PlayPlugin {
                 request.path = mappedItem.source;
             }
         }
+    }
+
+    
+    @Override
+    public void beforeActionInvocation(Method method) {
         
-        NavigationItem item = NavigationCache.get(request.path);
+        String lang     = "fr";//Lang.get();
+        String resource = Request.current().path;
+        
+        NavigationMappedItem mappedItem = NavigationCache.getMappedItem(lang, resource);
+        if (mappedItem != null && !mappedItem.redirect){
+            
+            resource = mappedItem.source;
+        }
+        
+        NavigationItem item = NavigationCache.get(resource);
         if (item != null){
             RenderArgs.current().put("__CURRENT_NAVIGATION_ITEM", item);
         }
-        
-        VirtualPage virtualPage = NavigationCache.getVirtualPage(request.path);
-        if (virtualPage != null){
-            
-            // handle virtual page
-            request.path = Router.reverse("cms.CmsController.virtualPage").url;
-            return;
-        }
     }
+    
+    
 
     @Override
     public void onRequestRouting(Route route) {
+        
         
         Request request = Request.current();
         

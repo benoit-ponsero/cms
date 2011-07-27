@@ -63,10 +63,24 @@ public class NavigationItem extends Model {
     
     public static List<NavigationItem> findByParent(NavigationItem item){
         
-        return NavigationItem.find(
-            "SELECT n "
+        String oql = "SELECT n "
                 + "FROM NavigationItem n "
-                + "WHERE n.parent = ?"
-            , item).fetch();
+                + "WHERE n.parent ";
+        
+        if (item == null){
+            
+            oql += " is null";
+        }
+        else {
+            oql += " :parent";
+        }
+        
+        JPAQuery query = NavigationItem.find(oql);
+            
+        if (item != null){
+            query.bind(":parent", item);
+        }
+        
+        return query.fetch();
     }
 }
