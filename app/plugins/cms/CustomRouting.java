@@ -4,6 +4,7 @@ package plugins.cms;
 import plugins.cms.navigation.NavigationCache;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import models.cms.NavigationItem;
 import models.cms.NavigationMappedItem;
 import models.cms.VirtualPage;
 import play.Logger;
@@ -11,6 +12,7 @@ import play.PlayPlugin;
 import play.mvc.Http.Request;
 import play.mvc.Router;
 import play.mvc.Router.Route;
+import play.mvc.Scope.RenderArgs;
 
 /**
  * @author benoit
@@ -24,13 +26,6 @@ public class CustomRouting extends PlayPlugin {
         String lang     = "fr";//Lang.get();
         String resource = request.path;
         
-        VirtualPage virtualPage = NavigationCache.getVirtualPage(resource);
-        if (virtualPage != null){
-            
-            // handle virtual page
-            request.path = Router.reverse("cms.CmsController.virtualPage").url;
-            return;
-        }
         
         NavigationMappedItem mappedItem = NavigationCache.getMappedItem(lang, resource);
         if (mappedItem != null){
@@ -44,6 +39,19 @@ public class CustomRouting extends PlayPlugin {
                 
                 request.path = mappedItem.source;
             }
+        }
+        
+        NavigationItem item = NavigationCache.get(request.path);
+        if (item != null){
+            RenderArgs.current().put("__CURRENT_NAVIGATION_ITEM", item);
+        }
+        
+        VirtualPage virtualPage = NavigationCache.getVirtualPage(request.path);
+        if (virtualPage != null){
+            
+            // handle virtual page
+            request.path = Router.reverse("cms.CmsController.virtualPage").url;
+            return;
         }
     }
 
