@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/Users/benoit/Applications/playApps/cms/app/controllers/cms/CmsController.java</file>
+        <file>file:/Users/benoit/Applications/playApps/cms/app/plugins/cms/CustomRouting.java</file>
+        <file>file:/Users/benoit/Applications/playApps/cms/app/plugins/cms/navigation/NavigationCache.java</file>
+        <file>file:/Users/benoit/Applications/playApps/cms/app/models/cms/NavigationItem.java</file>
+    </open-files>
 </project-private>

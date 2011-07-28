@@ -65,6 +65,7 @@ public class CustomRouting extends PlayPlugin {
             
             resource = mappedItem.source;
         }
+        RenderArgs.current().put("__REQUESTED_RESOURCE", resource);
         
         NavigationItem item = NavigationCache.get(resource);
         if (item != null){
