@@ -1,6 +1,8 @@
 package plugins.cms;
 
+import java.util.List;
 import models.cms.Editor;
+import models.cms.NavigationItem;
 import play.mvc.Http;
 import play.mvc.Router.ActionDefinition;
 import play.mvc.Scope;
@@ -53,6 +55,17 @@ public class Tag {
     public static String translate(String code){
         
         return code;
+    }
+    
+    public static NavigationItem rootNavigationItem(){
+        
+        List<NavigationItem> items = NavigationItem.findByParent(null);
+        
+        if (items.isEmpty()){
+            return null;
+        }
+        
+        return items.get(0);
     }
     
     private static String generateCommon(){
