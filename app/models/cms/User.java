@@ -2,9 +2,9 @@ package models.cms;
 
 import java.util.List;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import play.db.jpa.Model;
 
@@ -28,7 +28,7 @@ public class User extends Model {
     @Column(length=16, nullable=false)
     public String password;
 
-    @ElementCollection
     @JoinTable(name="cms_user_role")
-    public List<String> roles;
+    @OneToMany
+    public List<Role> roles;
 }
