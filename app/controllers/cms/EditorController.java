@@ -1,6 +1,13 @@
 package controllers.cms;
 
+import elfinder.Elfinder;
+import elfinder.ElfinderException._403;
+import elfinder.ElfinderException._404;
+import java.io.File;
+
 import models.cms.Editor;
+import play.Logger;
+import play.Play;
 import play.mvc.Controller;
 import plugins.router.Route;
 
@@ -45,16 +52,47 @@ public class EditorController extends Controller {
             editor.save();
         }
     }
-//
-//    @Action("browser")
-//    public View browser(HttpServletRequest request, HttpServletResponse response) {
-//
-//        String type = request.getParameter("type");
-//
-//        request.setAttribute("type", type);
-//
-//        return View.go("/nemo/browser.xhtml");
-//    }
+
+    @Route("browser")
+    public static void browser() throws Exception {
+
+        File root = new File(Play.applicationPath + "/public/files");
+        if(!root.exists()){
+            root.mkdirs();
+        }
+        
+        
+        Elfinder.options opts = new Elfinder.options();
+        opts.root = root.getAbsolutePath();
+        opts.URL  = "/public/files";
+        //opts.rootAlias = "/public/files";
+        
+        Elfinder elfinder = new Elfinder(opts);
+        
+        try {
+            Object result = elfinder.run(params.allSimple());
+            
+            if (result.getClass() == File.class){
+               
+               // handle the file 
+               renderBinary((File) result);
+            }
+            else {
+               //put json in http response;
+               renderJSON((String)result);
+            }
+            
+        } catch (_404 ex) {
+            
+        } catch (_403 ex) {
+            
+        } catch (Exception ex){
+            throw ex;
+        }
+        
+        
+                
+    }
 //
 //    @Action("listFolders")
 //    public void listFolders(HttpServletRequest request, HttpServletResponse response) throws Exception {
