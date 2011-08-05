@@ -67,7 +67,7 @@ public class Tag {
                 && (editor == null || editor.content.isEmpty())){
             content += "Type your text here";   
         }
-        else{
+        else if (editor != null){
             content += editor.content;
         }
         
