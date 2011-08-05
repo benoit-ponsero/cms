@@ -3,12 +3,15 @@ package elfinder;
 import com.google.gson.Gson;
 import elfinder.ElfinderException._403;
 import elfinder.ElfinderException._404;
+import java.awt.AlphaComposite;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FilePermission;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
@@ -16,23 +19,29 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 import javax.activation.MimetypesFileTypeMap;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
-import play.Logger;
 
 /**
  * @author benoit
  */
 public class Elfinder {
     
-    public Elfinder.options opts;
+    private Elfinder.options opts;
+    private Elfinder.httpParams params;
     
     public static class options {
         
@@ -71,6 +80,40 @@ public class Elfinder {
         
 	public Map<String, String> archiveMimes = new HashMap<String, String>();    // allowed archive's mimetypes to create. Leave empty for all available types.
 	public Object archivers   = null;                                           // info about archivers to use. See example below. Leave empty for auto detect
+    }
+    
+    private static class httpParams {
+        
+        Map<String,String[]> _httpParams = new HashMap<String, String[]>();
+
+        public httpParams() {
+        }
+
+        public httpParams(Map<String,String[]> params) {
+            _httpParams = params;
+        }
+        
+        public String get(String key){
+            
+            String[] val = _httpParams.get(key);
+            
+            return (val == null) ? null : val[0];
+        }
+        
+        public String[] getMultiple(String key){
+            
+            return _httpParams.get(key);
+        }
+    }
+    
+    private static class ImageFilter implements java.io.FilenameFilter {
+
+        public boolean accept(File file, String name) {
+            
+            name = name.toLowerCase();
+            return (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif"));
+        }
+        
     }
     
     public Map<String,String> _commands = new HashMap<String, String>(){{
@@ -159,26 +202,25 @@ public class Elfinder {
         put("flv"   , "video/x-flv");
         put("mkv"   , "video/x-matroska");
         
-    }};
-    
-    
+    }};   
     
     /**
      * Additional data about error
      **/
-    public Object   _errorData;
+    private Map<String,String> _errorData;
     
-    public String   _fakeRoot   = "";
+    private String   _fakeRoot   = "";
     
     /**
      * Command result to send to client
      **/
-    public Map<String, Object> _result = new HashMap<String, Object>();
+    private Map<String, Object> _result = new HashMap<String, Object>();
     
-    public long     _time      = 0;
-    public long     _today     = 0; 
-    public long     _yesterday = 0;
+    private long     _time      = 0;
+    private long     _today     = 0; 
+    private long     _yesterday = 0;
 
+    private List<File> _tmpFiles   = null;
     
     public Elfinder() {
         
@@ -272,10 +314,13 @@ public class Elfinder {
      *    //put json in http response;
      * }
      */
-    public Object run(Map<String,String> httpParams) throws  _404, _403, Exception{
+    public Object run(Map<String,String[]> httpParams, List<File> tmpFiles) throws  _404, _403, Exception{
         
-        String  cmd  = httpParams.get("cmd");
-        boolean init = (httpParams.get("init") != null);
+        _tmpFiles   = tmpFiles;
+        params      = new Elfinder.httpParams(httpParams);
+        
+        String  cmd  = (String) params.get("cmd");
+        boolean init = (params.get("init") != null);
         
         
         if (opts.root == null || opts.root.isEmpty() || !is_dir(opts.root)){
@@ -306,17 +351,21 @@ public class Elfinder {
             Map<String,Object> params = new HashMap<String, Object>();
             params.put("dotFiles", opts.dotFiles);
             params.put("uplMaxSize", 0);
+            params.put("url", opts.fileURL ? opts.URL : "");
             
             if (_commands.containsKey("archive") || _commands.containsKey("extract")){
                 
                 //checkArchivers();
-                String[] archives = {""};
+                
+                String[] archives = {"application/zip"};
+                
                 if (_commands.containsKey("archive")){
                     
                     params.put("archives", archives);
                 }
                 if (_commands.containsKey("extract")){
                     
+                    params.put("extract", archives);
                 }
             }
             
@@ -355,8 +404,8 @@ public class Elfinder {
         
         try {
             
-            Method m = this.getClass().getMethod(_commands.get(cmd), Map.class);
-            o = m.invoke(this, httpParams);
+            Method m = this.getClass().getMethod(_commands.get(cmd));
+            o = m.invoke(this);
         }
         catch(Exception ex){
             
@@ -386,10 +435,10 @@ public class Elfinder {
     
     // elfinder commands
     
-    public File _open(Map<String,String> httpParams) throws IOException, _404, _403 {
+    public File _open() throws IOException, _404, _403 {
         
-        String current = trim(httpParams.get("current"));
-        String target  = trim(httpParams.get("target"));
+        String current = trim(params.get("current"));
+        String target  = trim(params.get("target"));
         
         if (current != null){
             
@@ -429,7 +478,7 @@ public class Elfinder {
         else {
             
             String path = opts.root;
-            String init = httpParams.get("init");
+            String init = params.get("init");
             
             if (target != null && !target.isEmpty()){
                 
@@ -452,21 +501,21 @@ public class Elfinder {
                 }
             }
             
-            _content(path, (httpParams.get("tree") != null));
+            _content(path, (params.get("tree") != null));
         }
         
         return null;
     }
     
-    private void _rename(Map<String,String> httpParams) throws IOException{
+    public void _rename() throws IOException{
         
-        String current = trim(httpParams.get("current"));
-        String target  = trim(httpParams.get("target"));
+        String current = trim(params.get("current"));
+        String target  = trim(params.get("target"));
             
         String dir    = _findDir(trim(current));
         String file   = _find(trim(target), dir);
 
-        String name   = _checkName(httpParams.get("name"));
+        String name   = _checkName(params.get("name"));
 
         if (current == null || current.isEmpty()
             || target == null || target.isEmpty()
@@ -486,7 +535,7 @@ public class Elfinder {
         }
         else {
 
-            File targ = new File(dir, file);
+            File targ = new File(file);
             File dest = new File(dir, name);
 
             if (! targ.renameTo(dest)){
@@ -501,13 +550,12 @@ public class Elfinder {
             }
         }
     }
-    
-    
-    private void _mkdir(Map<String,String> httpParams) throws IOException{
         
-        String current = trim(httpParams.get("current"));
+    public void _mkdir() throws IOException{
+        
+        String current = trim(params.get("current"));
         String dir     = _findDir(trim(current));
-        String name    = _checkName(httpParams.get("name"));
+        String name    = _checkName(params.get("name"));
         
         File dest = new File(dir, name);
         
@@ -526,7 +574,7 @@ public class Elfinder {
             _result.put("error", "Unable to create folder");
         }
         else {
-            _chmod(dest, opts.dirMode);
+            _chmod(dest);
             List<String> tmp = new ArrayList<String>();
             tmp.add(_hash(dir + File.separator + name));
                 
@@ -535,7 +583,729 @@ public class Elfinder {
         }
     }
     
-    private void _chmod(File file, String mod){
+    public void _ping() {
+        return;
+    }
+    
+    public void _upload() throws IOException{
+        
+        String dir = _findDir(trim(params.get("current")));
+        
+        if (dir == null){
+            
+            _result.put("error", "Invalid parameters");
+            return;
+        }
+        
+        if (!_isAllowed(dir, "write")){
+            
+            _result.put("error", "Access denied");
+            return;
+        }
+        
+        if (_tmpFiles == null || _tmpFiles.isEmpty()){
+            
+            _result.put("error", "No file to upload");
+            return;
+        }
+        
+        for (File file : _tmpFiles){
+            
+            String originalName = file.getName();
+            
+            String name = _checkName(originalName);
+            if (name == null){
+                
+                _errorData(originalName, "Invalid name");
+            }
+            else if (!_isUploadAllow(file)){
+                
+                _errorData(originalName, "Not allowed file type");
+            }
+            else {
+                
+                File dest = new File (dir, name);
+                
+                if (! file.renameTo(dest)){
+                    
+                    _errorData(originalName, "Unable to save uploaded file");
+                }
+                else {
+                    
+                    _chmod(dest);
+                    List<String> select = (List<String>) _result.get("select");
+                    if (select == null){
+                        select = new ArrayList<String>();
+                    }
+                    select.add(_hash(dest.getAbsolutePath()));
+                    
+                    _result.put("select", select);
+                }
+            }
+        }
+        
+        Map<String,String> errorData = (Map<String,String>) _result.get("errorData");
+        
+        int errCnt = (errorData == null) ? 0 : errorData.size();
+        
+        if (errCnt == _tmpFiles.size()){
+            _result.put("error", "Unable to upload files");
+        }
+        else {
+            if (errCnt > 0){
+                _result.put("error", "Some files was not uploaded");
+            }
+            _content(dir, false);
+        }
+    }
+    
+    public void _mkfile() throws IOException {
+        
+        String dir  = _findDir(trim(params.get("current")));
+        String name = _checkName(params.get("name"));
+        
+        
+        if (dir == null){
+            
+            _result.put("error", "Invalid parameters");
+            return;
+        }
+                
+        if (!_isAllowed(dir, "write")){
+            
+            _result.put("error", "Access denied");
+            return;
+        }
+                
+        if (name == null){
+            
+            _result.put("error", "Invalid name");
+            return;
+        }
+        
+        File dest = new File(dir, name);
+        if (dest.exists()){
+            
+            _result.put("error", "File or folder with the same name already exists");
+        }
+        else {
+            
+            if (dest.createNewFile()){
+                
+                List<String> select = new ArrayList<String>();
+                select.add(_hash(dir + File.separator + name));
+                
+                _result.put("select", select);
+                _content(dir);
+            }
+            else {
+                _result.put("error", "Unable to create file");
+            }
+        }
+    }
+    
+    public void _rm() throws IOException {
+        
+        String dir  = _findDir(trim(params.get("current")));
+        
+        if (dir == null){
+            
+            _result.put("error", "Invalid parameters");
+            return;
+        }
+        
+        String[] targets = params.getMultiple("targets[]");
+        if (targets != null){
+            
+            for(String hash : targets){
+                
+                String file = _find(hash, dir);
+                if (file != null){
+                    
+                    _remove(file);
+                }
+            }
+        }
+        
+        Map<String,String> errorData = (Map<String,String>) _result.get("errorData");
+        if (errorData != null && !errorData.isEmpty()){
+            
+            _result.put("error", "Unable to remove file");
+        }
+        
+        _content(dir, true);
+    }
+    
+    public void _paste() throws IOException {
+        
+        String current  = _findDir(trim(params.get("current")));
+        String src      = _findDir(trim(params.get("src")));
+        String dst      = _findDir(trim(params.get("dst")));
+        
+        String[] targets  = params.getMultiple("targets[]");
+        
+        if (current == null || src == null || dst == null || targets == null || targets.length == 0){
+            
+            _result.put("error", "Invalid parameters");
+            return;
+        }
+        
+        boolean cut = ("1".equals(params.get("cut")));
+        
+        
+        if (!_isAllowed(dst, "write") || !_isAllowed(src, "read")){
+            
+            _result.put("error", "Access denied");
+            return;
+        }
+        
+        for (String hash : targets){
+            
+            String filepath = _find(hash, src);
+            if (filepath == null){
+                _result.put("error", "File not found");
+                _content(current, true);
+                return;
+            }
+            
+            File dest = new File(dst, filepath.substring(filepath.lastIndexOf("/")+1));
+            
+            if (dst.equals(filepath)){
+                
+                _result.put("error", "Unable to copy into itself");
+                _content(current, true);
+                return;
+            }
+            else if (dest.exists()){
+                
+                _result.put("error", "File or folder with the same name already exists");
+                _content(current, true);
+                return;
+            }
+            else if (cut && !_isAllowed(filepath, "rm")){
+                
+                _result.put("error", "Access denied");
+                _content(current, true);
+                return;
+            }
+            
+            File from = new File(filepath);
+            if (cut){
+                
+                if (!from.renameTo(dest)){
+                    
+                    _result.put("error", "Unable to move files");
+                    _content(current, true);
+                    return;
+                }
+                else if (!from.isDirectory()){
+                    _rmTmb(filepath);
+                }
+            }
+            else if (! _copy(from, dest)){
+                
+                _result.put("error", "Unable to copy files");
+                _content(current, true);
+                return;
+            }
+        }
+        
+        _content(current, true);
+    }
+        
+    public void _duplicate() throws IOException{
+        
+        String current  = _findDir(trim(params.get("current")));
+        String target   = _find(trim(params.get("target")), current);
+        
+        if (current == null
+                || target == null){
+            
+            _result.put("error", "Invalid parameters");
+            return;
+        }
+        
+        if (!_isAllowed(current, "write") || !_isAllowed(target, "read")){
+            
+            _result.put("error", "Access denied");
+            return;
+        }
+        
+        String dup = _uniqueName(target);
+        File from = new File(target);
+        File to   = new File(dup);
+        
+        if (! _copy(from, to)){
+            
+            _result.put("error", "Access denied");
+            return;
+        }
+        List<String> select = new ArrayList<String>();
+        select.add(_hash(dup));
+        _result.put("select", select);
+        
+        _content(current, to.isDirectory());
+    }
+    
+    public void _thumbnails() throws IOException {
+        
+        String current = _findDir(trim(params.get("current")));
+        
+        if (! opts.tmbDir.isEmpty()){
+            
+            _result.put("current", _hash(current));
+            
+            Map<String,String> images = new HashMap<String, String> ();
+            //_result.put("images", );
+            File dir = new File(current);
+            
+            int cnt = 0;
+            int max = opts.tmbAtOnce > 0 ? opts.tmbAtOnce : 5;
+            
+            for (File file : dir.listFiles(new ImageFilter())){
+                
+                if (_isAccepted(file.getName())){
+                    
+                    String path = file.getAbsolutePath();
+                    if (file.getParentFile().canRead() && _canCreateTmb(_mimetype(path))){
+                        
+                        String tmbPath = _tmbPath(path);
+                        File   tmbFile = new File(tmbPath);
+                        
+                        if (!tmbFile.exists()){
+                            
+                            if (cnt >= max){
+                                _result.put("tmb", true);
+                                return;
+                            }
+                            else if (_tmb(path, tmbPath)) {
+                                images.put(_hash(path), _path2url(tmbPath));
+                                _result.put("images", images);
+                                cnt ++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public void _archive() throws IOException{
+        
+        String current   = _findDir(trim(params.get("current")));
+        String[] targets = params.getMultiple("targets[]");
+        
+        if (current == null || targets == null || targets.length == 0
+                || !_isAllowed(current, "write")){
+            _result.put("error", "Invalid parameters");
+        }
+        
+        String name = (targets.length == 1) ? _find(targets[0], current) : params.get("name");
+        
+        String archiveName  = _uniqueName(name + ".zip", "");
+        File archive        = new File(archiveName);
+      
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archive));
+        
+        for (String hash : targets){
+            
+            String path = _find(hash, current);
+            if (path == null){
+                _result.put("error", "File not found");
+                return;
+            }
+            File file = new File(path);
+            
+            if (file.isDirectory()){
+                _zip(file, zos, file.getName());
+            }
+            else {
+                
+                FileInputStream fis = new FileInputStream(file);
+                //create a new zip entry 
+                ZipEntry anEntry = new ZipEntry(file.getName());
+                //place the zip entry in the ZipOutputStream object 
+                zos.putNextEntry(anEntry);
+                //now write the content of the file to the ZipOutputStream 
+                
+                byte[] readBuffer = new byte[2156];
+                int bytesIn = 0;
+                
+                while ((bytesIn = fis.read(readBuffer)) != -1) {
+                    zos.write(readBuffer, 0, bytesIn);
+                }
+                //close the Stream 
+                fis.close();
+            }
+        }
+        // Complete the ZIP file
+        zos.close();
+        
+        if (archive.exists()){
+            _content(current);
+            _result.put("select", _hash(archiveName));
+        }
+        else {
+            _result.put("error", "Unable to create archive");
+        }
+    }
+    
+    public void _extract() throws IOException{
+        
+        String current  = _findDir(trim(params.get("current")));
+        String target   = _find(trim(params.get("target")), current);
+        
+        if (current == null || target == null || !_isAllowed(current, "write")){
+            _result.put("error", "Invalid parameters");
+        }
+        
+        try {
+            
+            ZipFile zipFile = new ZipFile(target);
+            Enumeration entries = zipFile.entries();
+            while(entries.hasMoreElements()) {
+                ZipEntry zipEntry = (ZipEntry)entries.nextElement();
+
+                String fullPath = current + File.separator + zipEntry.getName();
+                
+                if (zipEntry.isDirectory()){
+
+                    new File(fullPath).mkdir();
+                }
+                else {
+                    FileUtils.copyInputStreamToFile(zipFile.getInputStream(zipEntry), new File (fullPath));
+                }
+            }
+            zipFile.close();
+            _content(current, true);
+        }
+        catch(Exception ex) {
+            _result.put("error", "Unable to extract files from archive");
+        }
+    }
+    
+    public void _resize() throws IOException{
+        
+        String current  = _findDir(trim(params.get("current")));
+        String target   = _find(trim(params.get("target")), current);
+        
+        Integer width    = parseInteger(params.get("width"));
+        Integer height   = parseInteger(params.get("height"));
+        
+        if (current == null || target == null || width == null || height == null){
+            _result.put("error", "Invalid parameters");
+            return;
+        }
+        
+        if (!_isAllowed(target, "write")){           
+            _result.put("error", "Access denied ");
+            return;
+        }
+        String mime = _mimetype(target);
+        if (!mime.startsWith("image")){
+            _result.put("error", "File is not an image");
+            return;
+        }
+        
+        File          imageFile = new File(target);
+        BufferedImage oldimage  = ImageIO.read(imageFile);
+        
+        BufferedImage newimage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = newimage.createGraphics();
+        g.drawImage(oldimage, 0, 0, width, height, null);
+        g.dispose();
+        g.setComposite(AlphaComposite.Src);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        String format = getFormatName(imageFile);
+        if (format == null){
+            format = "jpg";
+        }
+        
+        ImageIO.write(newimage, format, imageFile);
+        
+        List<String> select = new ArrayList<String>();
+        select.add(_hash(target));
+        _result.put("select", select);
+        _content(current);
+    }
+    // elfinder utils
+    
+    private Integer parseInteger(String val){
+        
+        try {
+            return Integer.parseInt(val);
+        }
+        catch(Exception ex) {
+            return null;
+        }
+    }
+    
+    private static String getFormatName(Object o) {
+        try {
+            // Create an image input stream on the image
+            ImageInputStream iis = ImageIO.createImageInputStream(o);
+
+            // Find all image readers that recognize the image format
+            Iterator iter = ImageIO.getImageReaders(iis);
+            if (!iter.hasNext()) {
+                // No readers found
+                return null;
+            }
+
+            // Use the first reader
+            ImageReader reader = (ImageReader)iter.next();
+
+            // Close stream
+            iis.close();
+
+            // Return the format name
+            return reader.getFormatName();
+        } catch (IOException e) {
+        }
+        // The image could not be read
+        return null;
+    }
+    
+    private void _zip(File zipDir, ZipOutputStream zos, String basename){
+        
+        try {
+            
+            //get a listing of the directory content 
+            String[] dirList = zipDir.list();
+            byte[] readBuffer = new byte[2156];
+            int bytesIn = 0;
+            //loop through dirList, and zip the files 
+            for (int i = 0; i < dirList.length; i++) {
+                File f = new File(zipDir, dirList[i]);
+                
+                String zipName = basename + File.separator + f.getName();
+                
+                if (f.isDirectory()) {
+                    
+                    //if the File object is a directory, call this 
+                    //function again to add its content recursively 
+                    _zip(f, zos, zipName);
+                    //loop again 
+                    continue;
+                }
+                //if we reached here, the File object f was not 
+                //a directory 
+                //create a FileInputStream on top of f 
+                FileInputStream fis = new FileInputStream(f);
+                //create a new zip entry 
+                ZipEntry anEntry = new ZipEntry(zipName);
+                //place the zip entry in the ZipOutputStream object 
+                zos.putNextEntry(anEntry);
+                //now write the content of the file to the ZipOutputStream 
+                while ((bytesIn = fis.read(readBuffer)) != -1) {
+                    zos.write(readBuffer, 0, bytesIn);
+                }
+                //close the Stream 
+                fis.close();
+            }
+        } catch (Exception e) {
+            //handle exception 
+        }
+    }
+    
+    private boolean _tmb(String img, String tmb) throws IOException {
+        
+        Integer[] s = getimagesize(img);
+        if (s == null){
+            
+            return false;
+        }
+        
+        try {
+            
+            BufferedImage   image = ImageIO.read(new File(img));
+            File            thumb = new File(tmb);
+
+            int tmbSize = opts.tmbSize;
+
+            if (!opts.tmbCrop){
+
+                int newwidth  = 0;
+                int newheight = 0;
+
+                /* Keeping original dimensions if image fitting into thumbnail without scale */
+                if (s[0] <= tmbSize && s[1] <= tmbSize){
+
+                    newwidth  = s[0];
+                    newheight = s[1];
+                }
+                else {
+                    /* Calculating image scale width and height */
+                    float xscale = (float)s[0] / tmbSize;
+                    float yscale = (float)s[1] / tmbSize;
+
+                    if (yscale > xscale){
+                        newwidth  = (int) (s[0] * (1 / yscale));
+                        newheight = (int) (s[1] * (1 / yscale));
+                    } else {
+                        newwidth  = (int) (s[0] * (1 / xscale));
+                        newheight = (int) (s[1] * (1 / xscale));
+                    }
+                }
+
+                int align_x = (tmbSize - newwidth) / 2;
+                int align_y = (tmbSize - newheight) / 2;
+
+                BufferedImage buffThumb = new BufferedImage(tmbSize, tmbSize, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g = buffThumb.createGraphics();
+                g.drawImage(image, align_x, align_y, tmbSize, tmbSize, null);
+                g.dispose();
+                g.setComposite(AlphaComposite.Src);
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g.setRenderingHint(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_QUALITY);
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+
+                ImageIO.write(buffThumb, "png", thumb);
+            }
+            else {
+
+                int size = s[0];
+                if (size > s[1]){
+                    size = s[1];
+                }
+                
+                int x = 0;
+                int y = 0;
+                
+                if (s[0] > s[1]){
+                    x = (s[0] - s[1]) / 2; 
+                } else {
+                    y = (s[1] - s[0]) / 2;
+                }
+                
+
+                BufferedImage cropedImage = image.getSubimage(x, y, size, size);
+                BufferedImage scaledImage = new BufferedImage(tmbSize, tmbSize, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g = scaledImage.createGraphics();
+                g.drawImage(cropedImage, 0, 0, tmbSize, tmbSize, null);
+                g.dispose();
+                g.setComposite(AlphaComposite.Src);
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g.setRenderingHint(RenderingHints.KEY_RENDERING,    RenderingHints.VALUE_RENDER_QUALITY);
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                ImageIO.write(scaledImage, "png", thumb);
+            }
+            
+            return true;
+        }
+        catch (Exception ex) {
+            return false;
+        }
+    }
+    
+    private boolean _copy (File from, File to){
+        
+        String fromPath = from.getAbsolutePath();
+        String toPath   = from.getAbsolutePath();
+        String toDirPath= from.getParentFile().getAbsolutePath();
+        
+        if (!_isAllowed(fromPath, "read")){
+            return _errorData(fromPath, "Access denied");
+        }
+        
+        if (!_isAllowed(toDirPath, "write")){
+            return _errorData(toDirPath, "Access denied");
+        }
+        
+        if (to.exists()){
+            return _errorData(fromPath, "File or folder with the same name already exists");
+        }
+        
+        if (from.isDirectory()){
+            
+            try {
+                FileUtils.copyDirectory(from, to);
+            }
+            catch(Exception ex) {
+                return _errorData(fromPath, "Unable to copy directory");
+            }
+        }
+        else {
+            
+            try {
+                FileUtils.copyFile(from, to);
+            }
+            catch(Exception ex) {
+                return _errorData(fromPath, "Unable to copy file");
+            }
+        }
+        
+        return true;
+    }
+    
+    private String _uniqueName(String path){
+        
+        return _uniqueName(path, " copy");
+    }
+    
+    private String _uniqueName(String path, String suffix){
+        
+        String ext = "";
+        int pos = path.lastIndexOf(".");
+        if (pos > -1){
+            ext = path.substring(pos);
+            path = path.substring(0, pos);
+        }
+        
+        String dupName = path + suffix;
+        
+        File dup  = new File(dupName + ext);
+        int nb = 2;
+        while (dup.exists()){
+            
+            dup = new File(dupName + " " + nb + ext);
+            nb++;
+        }
+        
+        return dup.getAbsolutePath();
+    }
+    
+    private void _remove(String path){
+        
+        if (!_isAllowed(path, "rm")){
+            
+           _errorData(path, "Access denied");
+           return;
+        }
+        
+        File file = new File(path);
+        if (!file.exists()){
+            
+            _errorData(path, "File not found");
+           return;
+        }
+        else if (file.isFile()) {
+            
+            if (!file.delete()){
+                _errorData(path, "Unable to remove file");
+            } 
+            else {
+                _rmTmb(path);
+            }
+        }
+        else {
+            
+            for (File tmp : file.listFiles()){
+                
+                _remove(tmp.getAbsolutePath());
+            }
+            
+            if (!file.delete()){
+                _errorData(path, "Unable to remove directory");
+            } 
+        }
+    }
+    
+    private void _chmod(File file){
         
         if (file.isDirectory()){
             file.setReadable(true);
@@ -554,6 +1324,57 @@ public class Elfinder {
         return _findDir(hash, null);
     }
 
+    private boolean _isUploadAllow(File file){
+        
+        boolean allow = false;
+        boolean deny  = false;
+        
+        String mime = new MimetypesFileTypeMap().getContentType(file);
+        
+        if (opts.uploadAllow.contains("all")){
+            
+            allow = true;
+        }
+        else {
+            if (opts.uploadAllow.contains(mime)){
+                allow = true;
+            }
+        }
+        
+        if (opts.uploadDeny.contains("all")){
+            
+            deny = true;
+        }
+        else {
+            if (opts.uploadDeny.contains(mime)){
+                deny = true;
+            }
+        }
+        
+        if (opts.uploadOrder.startsWith("allow")){
+            
+            if (deny){
+                return false;
+            }
+            else if (allow){
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            if (allow) {
+                return true;
+            } 
+            else if (deny) {
+                return false;
+            } 
+            else {
+                return true;
+            }
+        }
+    }
 
     private String _findDir(String hash, String path) throws IOException {
         
@@ -620,9 +1441,20 @@ public class Elfinder {
         }
     }
     
-    private String _checkName(String path){
+    private String _checkName(String name){
         
-        return null;
+        if (name == null){
+            
+            return null;
+        }
+        
+        name = name.trim().replaceAll("<.*>", "");
+        if (opts.dotFiles && name.startsWith(".")){
+            
+            return null;
+        }
+        
+        return ( Pattern.compile("^[^\\/<>:]+$").matcher(name).matches() ) ? name : null;
     }
 
     private File _readlink(String path){
@@ -679,6 +1511,11 @@ public class Elfinder {
         return true;
     }
     
+    private void _content(String path) throws IOException{
+        
+        _content(path, false);
+    }
+    
     private void _content(String path, boolean tree) throws IOException{
         
         _cwd(path);
@@ -700,7 +1537,7 @@ public class Elfinder {
         }
         else {
             name = basename(path);
-            rel += File.separator + path.substring(path.indexOf(opts.root)+1);
+            rel += File.separator + path.substring(opts.root.length() +1);
         }
         
         Map<String,Object> cwd = new HashMap<String, Object>();
@@ -766,8 +1603,8 @@ public class Elfinder {
         info.put("name", htmlspecialcars(f.getName()));
         info.put("hash", _hash(path));
         info.put("mime", f.isDirectory() ? "directory" : _mimetype(path));
-        info.put("data", d);
-        info.put("size", f.isDirectory() ? _dirSize(path) : f.getTotalSpace());
+        info.put("date", d);
+        info.put("size", f.isDirectory() ? _dirSize(path) : FileUtils.sizeOf(f));
         info.put("read", _isAllowed(path, "read"));
         info.put("write",_isAllowed(path, "write"));
         info.put("rm",   _isAllowed(path, "rm"));
@@ -833,7 +1670,7 @@ public class Elfinder {
     
     private boolean _canCreateTmb(String mime){
         
-        if (opts.tmbDir.startsWith("image")){
+        if (opts.tmbDir != null){
             
             return ("image/jpeg".equals(mime) || "image/png".equals(mime) || "image/gif".equals(mime));
         }
@@ -843,10 +1680,10 @@ public class Elfinder {
     private String _tmbPath(String path){
         
         String tmb = "";
-        if (!opts.tmbDir.isEmpty()){
+        if (opts.tmbDir != null){
             
             File f = new File(path);
-            tmb = (f.getName().equals(opts.tmbDir)) 
+            tmb = (!path.startsWith(opts.tmbDir)) 
                     ? opts.tmbDir + File.separator + _hash(path) + ".png"
                     : path;
         }
@@ -887,6 +1724,17 @@ public class Elfinder {
     
     private String _mimetype(String path){
         
+        int pos = path.lastIndexOf(".");
+        if (!path.isEmpty() && pos != -1){
+            
+            String ext = path.substring(pos+1);
+            String mime = _mimeTypes.get(ext);
+            
+            if (mime != null){
+                return mime;
+            }
+        }
+        
         return new MimetypesFileTypeMap().getContentType(path);
     }
     
@@ -894,13 +1742,37 @@ public class Elfinder {
         
         File f = new File (path);
 
-        String parent = f.getParent();
+        String dir  = (f.getParentFile().getAbsolutePath().substring(opts.root.length()));
         
-        String dir  = (f.getAbsolutePath().substring(opts.root.length()+1));
         String file = URLEncoder.encode(f.getName(), "UTF-8");
         
-        return opts.URL + (!dir.isEmpty() ? dir.replace(File.separator, "/")+"/" : "") + file;
+        String url = opts.URL;
+        if (!dir.isEmpty()){
+            
+            url += dir.replaceAll(File.separator, "/") + "/";
+        }
+        if (!url.endsWith("/")){
+            url += "/";
+        }
+        
+        
+        return url + file;
      }
+    
+    private boolean _errorData(String path, String msg){
+        
+        path = path.replace(opts.root, opts.rootAlias);
+        
+        Map<String,String> errorData = (Map<String,String>) _result.get("errorData");
+        if (errorData == null){
+            
+            errorData = new HashMap<String,String>();
+        }
+        errorData.put(path, msg);
+        _result.put("errorData", errorData);
+        
+        return false;
+    }
     
     private String htmlspecialcars (String content){
         
@@ -973,6 +1845,7 @@ public class Elfinder {
             
             return null;
         }
+        
         
         return size;
     }

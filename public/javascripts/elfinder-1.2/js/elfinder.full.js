@@ -2097,6 +2097,7 @@ elFinder.prototype.ui.prototype.commands = {
 						}
 						/* get server response */
 						html = $(doc.body).html();
+                                                
 						if (self.fm.jquery>=141) {
 							data = $.parseJSON(html);
 						} else if ( /^[\],:{}\s]*$/.test(html.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, "@")
@@ -2109,6 +2110,7 @@ elFinder.prototype.ui.prototype.commands = {
 						}
 						
 					} catch(e) {
+                                                //console.log(e);
 						data = { error : 'Unable to parse server response' };
 					}
 					complite();

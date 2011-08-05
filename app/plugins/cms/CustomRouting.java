@@ -7,12 +7,14 @@ import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import models.cms.NavigationItem;
 import models.cms.NavigationMappedItem;
+import models.cms.User;
 import models.cms.VirtualPage;
 import play.Logger;
 import play.PlayPlugin;
 import play.mvc.Http.Request;
 import play.mvc.Router;
 import play.mvc.Router.Route;
+import play.mvc.Scope;
 import play.mvc.Scope.RenderArgs;
 
 
@@ -24,6 +26,8 @@ public class CustomRouting extends PlayPlugin {
     
     @Override
     public void routeRequest(Request request) {
+        
+        CmsContext.current.set(new CmsContext());
         
         String lang     = "fr";//Lang.get();
         String resource = request.path;
@@ -51,32 +55,9 @@ public class CustomRouting extends PlayPlugin {
             }
         }
     }
-
     
-    @Override
-    public void beforeActionInvocation(Method method) {
-        
-        String lang     = "fr";//Lang.get();
-        String resource = Request.current().path;
-        
-        NavigationMappedItem mappedItem = NavigationCache.getMappedItem(lang, resource);
-        if (mappedItem != null && !mappedItem.redirect){
-            
-            resource = mappedItem.source;
-        }
-        RenderArgs.current().put("__REQUESTED_RESOURCE", resource);
-        
-        NavigationItem item = NavigationCache.get(resource);
-        if (item != null){
-            RenderArgs.current().put("__CURRENT_NAVIGATION_ITEM", item);
-        }
-    }
-    
-    
-
     @Override
     public void onRequestRouting(Route route) {
-        
         
         Request request = Request.current();
         
@@ -98,6 +79,57 @@ public class CustomRouting extends PlayPlugin {
         } catch (UnsupportedEncodingException ex) {
             
             Logger.error("[CustomRoutingPlugin] Unable to reset request.path");
+        }
+    }
+    
+    @Override
+    public void beforeActionInvocation(Method method) {
+        
+        CmsContext cmsRequest = CmsContext.current();
+        
+        
+        String lang     = "fr";//Lang.get();
+        String resource = Request.current().path;
+        
+        NavigationMappedItem mappedItem = NavigationCache.getMappedItem(lang, resource);
+        if (mappedItem != null && !mappedItem.redirect){
+            
+            resource = mappedItem.source;
+        }
+        RenderArgs.current().put("__REQUESTED_RESOURCE", resource);
+        cmsRequest.requestedResource = resource;
+        
+        NavigationItem item = NavigationCache.get(resource);
+        if (item != null){
+            RenderArgs.current().put("__CURRENT_NAVIGATION_ITEM", item);
+            cmsRequest.currentNavigationItem = item;
+        }
+        
+        // handle user
+        Scope.Session session    = Scope.Session.current();
+        Scope.Params  params     = Request.current().params;
+        
+        
+        String email    = params.get("email");
+        String password = params.get("password");
+        String logout   = params.get("logout");
+        
+        if (logout != null){
+            
+            session.remove(CmsContext.Constant.CMS_USER);
+        }
+        
+        if (email != null && password != null){
+            
+            User user = User.find("byMailAndPassword", email, password).first();
+            
+            if (user != null){
+                
+                session.put(CmsContext.Constant.CMS_USER, user.id);
+            }
+            else {
+                session.remove(CmsContext.Constant.CMS_USER);
+            }
         }
     }
 }

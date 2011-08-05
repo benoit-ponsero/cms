@@ -4,10 +4,12 @@ import elfinder.Elfinder;
 import elfinder.ElfinderException._403;
 import elfinder.ElfinderException._404;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import models.cms.Editor;
-import play.Logger;
 import play.Play;
+import play.data.Upload;
 import play.mvc.Controller;
 import plugins.router.Route;
 
@@ -61,6 +63,34 @@ public class EditorController extends Controller {
             root.mkdirs();
         }
         
+        List<Upload> uploads = (List<Upload>) request.args.get("__UPLOADS");
+        List<File> fileArray = new ArrayList<File>();
+        if (uploads != null){
+            for (Upload upload : uploads) {
+                
+                if (upload.getSize() > 0 && upload.getFieldName().equals("upload[]")) {
+                    
+                    File file = null;
+                    
+                    if (upload.isInMemory()){
+                        
+                        file = new File(upload.getFileName());
+                        play.libs.IO.write(upload.asStream(), file);
+                        
+                    } else {
+                        
+                        file = upload.asFile();
+                    }
+                    
+                    if (file.length() > 0) {
+                        fileArray.add(file);
+                    }
+                }
+            }
+        }
+        
+        //File[] files = params.get("upload[]", File.class);
+        
         
         Elfinder.options opts = new Elfinder.options();
         opts.root = root.getAbsolutePath();
@@ -70,7 +100,7 @@ public class EditorController extends Controller {
         Elfinder elfinder = new Elfinder(opts);
         
         try {
-            Object result = elfinder.run(params.allSimple());
+            Object result = elfinder.run(params.all(), fileArray);
             
             if (result.getClass() == File.class){
                
@@ -78,21 +108,24 @@ public class EditorController extends Controller {
                renderBinary((File) result);
             }
             else {
+                
                //put json in http response;
-               renderJSON((String)result);
+               
+               renderHtml((String) result);
             }
             
         } catch (_404 ex) {
-            
+            play.Logger.info("404");
         } catch (_403 ex) {
-            
+            play.Logger.info("403");
         } catch (Exception ex){
+            play.Logger.info("ex");
             throw ex;
         }
         
-        
-                
     }
+    
+    
 //
 //    @Action("listFolders")
 //    public void listFolders(HttpServletRequest request, HttpServletResponse response) throws Exception {

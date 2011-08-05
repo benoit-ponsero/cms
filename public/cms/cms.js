@@ -11,6 +11,15 @@ var cms = {
         toolbar  : 'complete',
         allowSource : true,
         cssfiles : ['/public/javascripts/elrte-1.3/css/elrte-inner.css']
+        ,fmOpen : function(callback) {
+            $('<div id="myelfinder" />').elfinder({
+             url : '/--editor/browser',
+             lang : 'fr',
+             dialog : { width : 900, modal : true, title : 'Fichiers' }, // open in dialog window
+             closeOnEditorCallback : true, // close after file select
+             editorCallback : callback     // pass callback to file manager
+            })
+        }
     }
     , _rte : null // current elrte instance
     , _bodyPadTop : 0
@@ -147,8 +156,11 @@ $(function (){
 				
             var $target = $(e.target);
 
-            if ($target.parents('.el-rte').length == 0){
-
+            if ($target.parents('.el-rte').length == 0 
+                && $target.parents(".ui-dialog").length == 0
+                && !$target.hasClass("ui-widget-overlay")
+                && !$target.hasClass("ui-button-text")){
+                
                 cms.kill_editor();
             }
             return true;

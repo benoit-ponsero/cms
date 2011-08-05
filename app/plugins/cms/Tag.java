@@ -3,6 +3,8 @@ package plugins.cms;
 import java.util.List;
 import models.cms.Editor;
 import models.cms.NavigationItem;
+import models.cms.Role;
+import models.cms.User;
 import play.mvc.Http;
 import play.mvc.Router.ActionDefinition;
 import play.mvc.Scope;
@@ -33,17 +35,36 @@ public class Tag {
         
         String content = "";
         
-        Scope.Params scopeRequest = Scope.Params.current();
-        
-        if (scopeRequest.get("__CMS_TAG_GENERATED") == null ){
+        CmsContext cmsRequest = CmsContext.current();
+        if (cmsRequest.isCmsEditingAuthorized == null){
+            
+            cmsRequest.isCmsEditingAuthorized = false;
+            
+            String userid = Scope.Session.current().get("cms_userid");
+            if (userid != null){
+                
+                User user       = User.findById(Long.parseLong(userid));
+                Role cmsEditor  = Role.find("byName", "cms_editor").first();
+                
+                if (user.roles.contains(cmsEditor)){
+                    
+                    cmsRequest.isCmsEditingAuthorized = true;
+                }
+            }
+        }
+                
+        if (cmsRequest.isCmsEditingAuthorized && !cmsRequest._tagGenerated ){
             
             content += generateCommon();
-            scopeRequest.put("__CMS_TAG_GENERATED", "");
+            cmsRequest._tagGenerated = true;
         }
         
-        content += "<div class=\"cms_editor\" data-code=\""+code+"\">";        
         Editor editor = Editor.findByPathAndCodeAndLanguage(path, code, lang);
-        if (editor == null || editor.content.isEmpty()){
+        
+        content += "<div class=\"cms_editor\" data-code=\""+code+"\">";        
+        
+        if (cmsRequest.isCmsEditingAuthorized
+                && (editor == null || editor.content.isEmpty())){
             content += "Type your text here";   
         }
         else{
@@ -82,7 +103,10 @@ public class Tag {
         StringBuilder value = new StringBuilder();
 
         value.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"/public/javascripts/elrte-1.3/css/elrte.min.css\" media=\"screen\" charset=\"utf-8\"/>");
+        value.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"/public/javascripts/elfinder-1.2/css/elfinder.css\" media=\"screen\" charset=\"utf-8\"/>");
         value.append("<script type=\"text/javascript\" src=\"/public/javascripts/elrte-1.3/js/elrte.min.js\"></script>");
+        value.append("<script type=\"text/javascript\" src=\"/public/javascripts/elfinder-1.2/js/elfinder.min.js\"></script>");
+        value.append("<script type=\"text/javascript\" src=\"/public/javascripts/elfinder-1.2/js/i18n/elfinder.fr.js\"></script>");
         value.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"/public/cms/cms.css\"/>");
         value.append("<script type=\"text/javascript\" src=\"/public/cms/depend.js\"></script>");
         value.append("<script type=\"text/javascript\" src=\"/public/cms/cms.js\"></script>");
