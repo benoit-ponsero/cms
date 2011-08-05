@@ -25,7 +25,7 @@ public class Editor extends Model {
 
     @Lob
     @Column(nullable=false)
-    public String content;
+    public String content = "";
     
     
     public static Editor findByPathAndCodeAndLanguage(String path, String code, String lang){
