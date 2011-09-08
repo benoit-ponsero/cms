@@ -7,4 +7,3 @@
     
     _var = plugins.cms.Tag.rootNavigationItem();
 }%
-

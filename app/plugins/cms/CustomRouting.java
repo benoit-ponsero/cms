@@ -85,7 +85,7 @@ public class CustomRouting extends PlayPlugin {
     @Override
     public void beforeActionInvocation(Method method) {
         
-        CmsContext cmsRequest = CmsContext.current();
+        CmsContext cmsContext = CmsContext.current();
         
         
         String lang     = "fr";//Lang.get();
@@ -97,13 +97,15 @@ public class CustomRouting extends PlayPlugin {
             resource = mappedItem.source;
         }
         RenderArgs.current().put("__REQUESTED_RESOURCE", resource);
-        cmsRequest.requestedResource = resource;
+        cmsContext.requestedResource = resource;
         
         NavigationItem item = NavigationCache.get(resource);
         if (item != null){
             RenderArgs.current().put("__CURRENT_NAVIGATION_ITEM", item);
-            cmsRequest.currentNavigationItem = item;
+            cmsContext.currentNavigationItem = item;
         }
+        
+        RenderArgs.current().put("cmsContext", cmsContext);
         
         // handle user
         Scope.Session session    = Scope.Session.current();
