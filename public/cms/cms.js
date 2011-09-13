@@ -146,6 +146,14 @@ $(function (){
     
     depend.jqueryui(function (){
         
+        $("#cms_user img").click(function () {
+            $("#cms_user").toggleClass("opened");
+        });
+        
+        if (!cms.logged){
+            return;
+        }
+        
         cms.init_toolbar();
         
         $(".cms_opener").click (function(ev) {
@@ -194,6 +202,8 @@ $(function (){
         }).mouseleave(function (){
             $(this).removeClass("hover");
         });
+        
+        
         
     });
 })

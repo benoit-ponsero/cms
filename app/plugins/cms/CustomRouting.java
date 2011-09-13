@@ -112,8 +112,8 @@ public class CustomRouting extends PlayPlugin {
         Scope.Params  params     = Request.current().params;
         
         
-        String email    = params.get("email");
-        String password = params.get("password");
+        String email    = params.get("cms_email");
+        String password = params.get("cms_password");
         String logout   = params.get("logout");
         
         if (logout != null){

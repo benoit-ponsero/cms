@@ -4,6 +4,7 @@ import java.util.List;
 import models.cms.Editor;
 import models.cms.NavigationItem;
 import models.cms.Role;
+import models.cms.Translation;
 import models.cms.User;
 import play.mvc.Http;
 import play.mvc.Router.ActionDefinition;
@@ -35,35 +36,19 @@ public class Tag {
         
         String content = "";
         
-        CmsContext cmsRequest = CmsContext.current();
-        if (cmsRequest.isCmsEditingAuthorized == null){
-            
-            cmsRequest.isCmsEditingAuthorized = false;
-            
-            String userid = Scope.Session.current().get("cms_userid");
-            if (userid != null){
+        CmsContext cmsContext = CmsContext.current();
                 
-                User user       = User.findById(Long.parseLong(userid));
-                Role cmsEditor  = Role.find("byName", "cms_editor").first();
-                
-                if (user.roles.contains(cmsEditor)){
-                    
-                    cmsRequest.isCmsEditingAuthorized = true;
-                }
-            }
-        }
-                
-        if (cmsRequest.isCmsEditingAuthorized && !cmsRequest._tagGenerated ){
+        if (isCmsEditingAuthorized() && !cmsContext._tagGenerated ){
             
             content += generateCommon();
-            cmsRequest._tagGenerated = true;
+            cmsContext._tagGenerated = true;
         }
         
         Editor editor = Editor.findByPathAndCodeAndLanguage(path, code, lang);
         
         content += "<div class=\"cms_editor\" data-code=\""+code+"\">";        
         
-        if (cmsRequest.isCmsEditingAuthorized
+        if (isCmsEditingAuthorized()
                 && (editor == null || editor.content.isEmpty())){
             content += "Type your text here";   
         }
@@ -76,9 +61,31 @@ public class Tag {
         return content;
     }
     
+    public static String login(){
+        
+        String scripts = "";
+        
+        CmsContext cmsContext = CmsContext.current();
+        if (!cmsContext._tagGenerated){
+            scripts = generateCommon();
+            cmsContext._tagGenerated = true;
+        }
+        
+        return scripts;
+    }
+    
     public static String translate(String code){
         
-        return code;
+        String lang = "fr";
+        
+        Translation translation = Translation.findByCodeAndLanguage(code, lang);
+        
+        if (translation == null){
+            
+            return "??"+code+"??";
+        }
+        
+        return translation.value;
     }
     
     public static NavigationItem rootNavigationItem(){
@@ -114,11 +121,39 @@ public class Tag {
 
         value.append("cms.requestedResource = '").append(path).append("';");
         value.append("cms.language = '").append(lang).append("';");
-        //value.append("nemo.logged = ").append(logged).append(";");
+        value.append("cms.logged = ").append(isCmsUserLogged()).append(";");
         value.append("</script>");
         
         return value.toString();
     }
     
+    private static boolean isCmsEditingAuthorized(){
+        
+        CmsContext cmsContext = CmsContext.current();
+        if (cmsContext.isCmsEditingAuthorized == null){
+            
+            cmsContext.isCmsEditingAuthorized = false;
+            
+            String userid = Scope.Session.current().get("cms_userid");
+            if (userid != null){
+                
+                User user       = User.findById(Long.parseLong(userid));
+                Role cmsEditor  = Role.find("byName", "cms_editor").first();
+                
+                if (user.roles.contains(cmsEditor)){
+                    
+                    cmsContext.isCmsEditingAuthorized = true;
+                }
+            }
+        }
+        
+        return cmsContext.isCmsEditingAuthorized;
+    }
     
+    private static boolean isCmsUserLogged(){
+        
+        String userid = Scope.Session.current().get("cms_userid");
+        
+        return (userid != null);
+    }
 }
