@@ -61,6 +61,18 @@ public class NavigationItem extends Model {
         return false;
     }
     
+    
+    public static NavigationItem findRoot(){
+        
+        String jpql = " SELECT ni"
+                    + " FROM   NavigationItem ni"
+                    + " WHERE  ni.parent IS NULL";
+
+        JPAQuery query = NavigationItem.find(jpql);
+        
+        return query.first();
+    }
+    
     public static List<NavigationItem> findByParent(NavigationItem item){
         
         String oql = "SELECT n "

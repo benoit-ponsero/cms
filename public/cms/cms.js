@@ -184,7 +184,7 @@ $(function (){
             
             cms.toolbar_open();
 
-            var top = $("#cms_editor_toolbar").offset().top;
+            var top = $("#cms_editor_toolbar").offset().top - $(document).scrollTop();
                 
             var toolbar_height  = $(".cmsrte .toolbar").height();
             
