@@ -105,6 +105,10 @@ var cms = {
             $("#cms_editor_toolbar").height(0);
         }
     }
+    , logout : function (){
+        
+        $("#cms_logout").submit();
+    }
 };
 
 

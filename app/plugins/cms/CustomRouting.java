@@ -114,7 +114,7 @@ public class CustomRouting extends PlayPlugin {
         
         String email    = params.get("cms_email");
         String password = params.get("cms_password");
-        String logout   = params.get("logout");
+        String logout   = params.get("cms_logout");
         
         if (logout != null){
             
