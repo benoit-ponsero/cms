@@ -25,4 +25,19 @@ public class CmsContext {
     }
     
     
+    public NavigationItem rootNavigationItem(){
+        
+        return Tag.rootNavigationItem();
+    }
+    
+    public String translate(String code){
+        
+        return Tag.translate(code);
+    }
+    
+    public String url(String path){
+        
+        return Tag.url(path);
+    }
+    
 }

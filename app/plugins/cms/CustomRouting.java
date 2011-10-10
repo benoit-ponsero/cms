@@ -105,7 +105,7 @@ public class CustomRouting extends PlayPlugin {
             cmsContext.currentNavigationItem = item;
         }
         
-        RenderArgs.current().put("cmsContext", cmsContext);
+        RenderArgs.current().put("cms", cmsContext);
         
         // handle user
         Scope.Session session    = Scope.Session.current();
