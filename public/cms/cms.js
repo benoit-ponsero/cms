@@ -175,6 +175,14 @@ $(function (){
         }
     })
     
+    
+    for (var i = 0; i < document.styleSheets.length; i++) {
+        var ss = document.styleSheets[i].href;
+        if (ss) {
+            cms.opts.cssfiles.push(ss);
+        }
+    }
+    
     depend.jqueryui(function (){
         
         $("#cms_user img").click(function () {
