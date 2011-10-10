@@ -96,7 +96,10 @@ var cms = {
 
         $.post('/--editor/save', data, function (){
 
-            cms.modified = false;
+            $(".cms_editor").each(function (){
+            
+                $(this).data('md5', $.md5($(this).html()));
+            });
         })
     }
     , kill_editor : function (){
