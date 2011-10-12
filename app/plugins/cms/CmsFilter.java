@@ -9,8 +9,11 @@ import models.cms.NavigationItem;
 import models.cms.NavigationMappedItem;
 import models.cms.User;
 import models.cms.VirtualPage;
+import org.hibernate.Filter;
 import play.Logger;
 import play.PlayPlugin;
+import play.db.jpa.JPA;
+import play.i18n.Lang;
 import play.mvc.Http.Request;
 import play.mvc.Router;
 import play.mvc.Router.Route;
@@ -21,7 +24,7 @@ import play.mvc.Scope.RenderArgs;
 /**
  * @author benoit
  */
-public class CustomRouting extends PlayPlugin {
+public class CmsFilter extends PlayPlugin {
 
     
     @Override
@@ -87,10 +90,13 @@ public class CustomRouting extends PlayPlugin {
         
         CmsContext cmsContext = CmsContext.current();
         
-        
-        String lang     = "fr";//Lang.get();
+        String lang     = Lang.get();
         String resource = Request.current().path;
         
+        
+        /**
+         * handle navigation
+         */
         NavigationMappedItem mappedItem = NavigationCache.getMappedItem(lang, resource);
         if (mappedItem != null && !mappedItem.redirect){
             
@@ -107,7 +113,9 @@ public class CustomRouting extends PlayPlugin {
         
         RenderArgs.current().put("cms", cmsContext);
         
-        // handle user
+        /**
+         * handle user
+         */
         Scope.Session session    = Scope.Session.current();
         Scope.Params  params     = Request.current().params;
         
@@ -133,5 +141,16 @@ public class CustomRouting extends PlayPlugin {
                 session.remove(CmsContext.Constant.CMS_USER);
             }
         }
+        
+        /**
+         * handle hibernate filter
+         */
+        org.hibernate.Session hibernateSession = ((org.hibernate.Session)JPA.em().getDelegate());
+        
+        Filter filter = hibernateSession.enableFilter("langFilter");
+        if (filter != null){
+            filter.setParameter("langFilterParam", lang);
+        }
+        
     }
 }

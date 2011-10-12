@@ -20,7 +20,7 @@ var depend = {
             (function() {
 
                 var script = document.createElement('script');script.type = 'text/javascript';script.async = false;
-                script.src = '/public/javascripts/jquery-1.6.1.min.js';
+                script.src = '/public/javascripts/jquery-1.6.4.min.js';
 
                 script.onload = ready_callback; // Run main() once jQuery has loaded
                 script.onreadystatechange = function () { // Same thing but for IE
