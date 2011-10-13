@@ -2,3 +2,5 @@ self: play -> cms 0.1
 
 require:
     - play
+    - com.yahoo.platform.yui -> yuicompressor 2.4.6
+    - rhino -> js 1.7R2
