@@ -32,7 +32,7 @@ public class CmsFilter extends PlayPlugin {
         
         CmsContext.current.set(new CmsContext());
         
-        String lang     = Lang.get();
+        String lang     = "fr";//Lang.get();
         String resource = request.path;
         
        

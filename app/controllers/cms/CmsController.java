@@ -2,7 +2,6 @@ package controllers.cms;
 
 import models.cms.NavigationMappedItem;
 import models.cms.VirtualPage;
-import play.i18n.Lang;
 import play.mvc.Controller;
 import plugins.cms.navigation.NavigationCache;
 import plugins.router.Route;
@@ -21,7 +20,7 @@ public class CmsController extends Controller {
     
     public static void redirectMappedItem(){
         
-        String lang     = Lang.get();
+        String lang     = "fr";//Lang.get();
         String resource = request.path;
         
         NavigationMappedItem mappedItem = NavigationCache.getMappedItem(lang, resource);

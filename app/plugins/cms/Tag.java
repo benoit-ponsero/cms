@@ -6,7 +6,6 @@ import models.cms.NavigationItem;
 import models.cms.Role;
 import models.cms.Translation;
 import models.cms.User;
-import play.i18n.Lang;
 import play.mvc.Http;
 import play.mvc.Router.ActionDefinition;
 import play.mvc.Scope;
@@ -33,7 +32,7 @@ public class Tag {
         Http.Request request = Http.Request.current();
         
         String path = request.path;
-        String lang = Lang.get();
+        String lang = "fr";
         
         String content = "";
         
@@ -77,7 +76,7 @@ public class Tag {
     
     public static String translate(String code){
         
-        String lang = Lang.get();
+        String lang = "fr";
         
         Translation translation = Translation.findByCodeAndLanguage(code, lang);
         
@@ -105,7 +104,7 @@ public class Tag {
         Http.Request request = Http.Request.current();
         
         String path     = request.path;
-        String lang     = Lang.get();
+        String lang     = "fr";
         //String logged   = "true";
         
         StringBuilder value = new StringBuilder();
