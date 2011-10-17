@@ -32,7 +32,7 @@ public class CmsFilter extends PlayPlugin {
         
         CmsContext.current.set(new CmsContext());
         
-        String lang     = "fr";//Lang.get();
+        String lang     = Lang.get();
         String resource = request.path;
         
        
@@ -145,12 +145,18 @@ public class CmsFilter extends PlayPlugin {
         /**
          * handle hibernate filter
          */
-        org.hibernate.Session hibernateSession = ((org.hibernate.Session)JPA.em().getDelegate());
         
-        Filter filter = hibernateSession.enableFilter("langFilter");
-        if (filter != null){
-            filter.setParameter("langFilterParam", lang);
+        try {
+            
+            org.hibernate.Session hibernateSession = ((org.hibernate.Session)JPA.em().getDelegate());
+        
+            Filter filter = hibernateSession.enableFilter("langFilter");
+            if (filter != null){
+                filter.setParameter("langFilterParam", lang);
+            }
         }
-        
+        catch (Exception ex) {
+            
+        }
     }
 }
