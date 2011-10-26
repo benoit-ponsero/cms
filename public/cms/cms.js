@@ -106,6 +106,17 @@ var cms = {
         
         if (cms._rte != null){
             
+            /**
+             * update du rte si on est en mode source.
+             */
+            var $cmsrte = cms._rte.next();
+            var $tab = $cmsrte.find('.tabsbar div.tab.active')
+            if ($tab.hasClass("source")){
+                $cmsrte.find("div.tab.editor").trigger('click');
+            }
+            /**
+             * -------------------------------------------------- */
+            
             cms._rte.elrte('destroy');
             cms._rte.get(0).elrte = null;
             cms._rte = null;

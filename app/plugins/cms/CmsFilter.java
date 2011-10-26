@@ -155,8 +155,6 @@ public class CmsFilter extends PlayPlugin {
                 filter.setParameter("langFilterParam", lang);
             }
         }
-        catch (Exception ex) {
-            
-        }
+        catch (Exception ex) {}
     }
 }
