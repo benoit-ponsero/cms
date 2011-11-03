@@ -79,7 +79,7 @@ public class Tag {
         
         String lang = Lang.get();
         
-        Translation translation = Translation.findByCodeAndLanguage(code, lang);
+        Translation translation = translate(code, lang);
         
         if (translation == null){
             
@@ -87,6 +87,13 @@ public class Tag {
         }
         
         return translation.value;
+    }
+    
+    public static Translation translate(String code, String lang){
+        
+        Translation translation = Translation.findByCodeAndLanguage(code, lang);
+        
+        return translation;
     }
     
     public static NavigationItem rootNavigationItem(){
@@ -112,9 +119,6 @@ public class Tag {
 
         value.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"/public/javascripts/elrte-1.3/css/elrte.min.css\" media=\"screen\" charset=\"utf-8\"/>");
         value.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"/public/javascripts/elfinder-1.2/css/elfinder.css\" media=\"screen\" charset=\"utf-8\"/>");
-        value.append("<script type=\"text/javascript\" src=\"/public/javascripts/elrte-1.3/js/elrte.min.js\"></script>");
-        value.append("<script type=\"text/javascript\" src=\"/public/javascripts/elfinder-1.2/js/elfinder.min.js\"></script>");
-        value.append("<script type=\"text/javascript\" src=\"/public/javascripts/elfinder-1.2/js/i18n/elfinder.fr.js\"></script>");
         value.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"/public/cms/cms.css\"/>");
         value.append("<script type=\"text/javascript\" src=\"/public/cms/depend.js\"></script>");
         value.append("<script type=\"text/javascript\" src=\"/public/cms/cms.js\"></script>");

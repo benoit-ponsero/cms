@@ -1,5 +1,6 @@
 package models.cms;
 
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -12,6 +13,7 @@ import play.db.jpa.Model;
 @Entity
 @Table(name="cms_translation",uniqueConstraints=@UniqueConstraint(columnNames={"code","language"}))
 public class Translation extends Model {
+    
     @Column(nullable=false, length=32)
     public String code;
 
@@ -24,5 +26,21 @@ public class Translation extends Model {
     public static Translation findByCodeAndLanguage(String code, String lang){
         
         return Translation.find("byCodeAndLanguage", code, lang).first();
+    }
+    
+    public static List<Translation> findByCode (String code) {
+        
+        return Translation.find("byCode", code).fetch();
+    }
+    
+    public static List<String> findDistinctLanguages(){
+        
+        String oql = " SELECT DISTINCT (t.language)"
+                    + " FROM   Translation t"
+                    + " ORDER BY t.language";
+
+        JPAQuery query = Translation.find(oql);
+        
+        return query.fetch();
     }
 }

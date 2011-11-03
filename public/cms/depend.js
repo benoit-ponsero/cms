@@ -1,6 +1,18 @@
 var depend = {
 
-    jquery : function (callback){
+    on : function (scriptUrl, callback){
+        
+        var script = document.createElement('script');script.type = 'text/javascript';script.async = false;
+        script.src = scriptUrl;
+
+        script.onload = callback; // Run main() once jQuery has loaded
+        script.onreadystatechange = function () { // Same thing but for IE
+            if (this.readyState == 'complete' || this.readyState == 'loaded') callback();
+        }
+
+        var s = document.getElementsByTagName('script')[0];s.parentNode.insertBefore(script, s);
+    }
+    , jquery : function (callback){
 
         var ready_callback = function (){
 

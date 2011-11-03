@@ -73,6 +73,10 @@
             </export>
             <view>
                 <items>
+                    <source-folder style="packages">
+                        <label>app</label>
+                        <location>app</location>
+                    </source-folder>
                     <source-folder style="tree">
                         <label>app/views</label>
                         <location>app/views</location>
@@ -88,10 +92,6 @@
                     <source-folder style="tree">
                         <label>src</label>
                         <location>src</location>
-                    </source-folder>
-                    <source-folder style="packages">
-                        <label>app</label>
-                        <location>app</location>
                     </source-folder>
                     <source-folder style="packages">
                         <label>test</label>

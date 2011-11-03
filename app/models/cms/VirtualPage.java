@@ -18,4 +18,17 @@ public class VirtualPage extends Model {
 
     @Column(nullable=false,length=255)
     public String view;
+    
+    
+    public static VirtualPage findByPath(String path) {
+        
+        String jpql = " SELECT v"
+                    + " FROM   VirtualPage v"
+                    + " WHERE  v.path = :path";
+
+        JPAQuery query = VirtualPage.find(jpql);
+        query.bind("path", path);
+        
+        return query.first();
+    }
 }

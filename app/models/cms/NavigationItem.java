@@ -22,7 +22,7 @@ import plugins.cms.navigation.NavigationPlugin;
 public class NavigationItem extends Model {
 
     @Column(nullable=false)
-    public int position = 0;
+    public long position = 0;
     
     @Column(nullable=false)
     public boolean active = true;
@@ -73,25 +73,55 @@ public class NavigationItem extends Model {
         return query.first();
     }
     
+    public static NavigationItem findByPath(String path){
+        
+        String jpql = " SELECT ni"
+                    + " FROM   NavigationItem ni"
+                    + " WHERE  ni.path = :path";
+
+        JPAQuery query = NavigationItem.find(jpql);
+        query.bind("path", path);
+        
+        return query.first();
+    }
+    
     public static List<NavigationItem> findByParent(NavigationItem item){
         
         String oql = "SELECT n "
-                + "FROM NavigationItem n "
-                + "WHERE n.parent ";
+                    + " FROM NavigationItem n"
+                    + " WHERE n.parent";
         
         if (item == null){
             
             oql += " is null";
         }
         else {
-            oql += " :parent";
+            oql += " = :parent";
         }
+        
+        oql += " ORDER BY n.position";
         
         JPAQuery query = NavigationItem.find(oql);
             
         if (item != null){
-            query.bind(":parent", item);
+            query.bind("parent", item);
         }
+        
+        return query.fetch();
+    }
+    
+    public static List<NavigationItem> findByParentAndPos(NavigationItem item, Long pos){
+        
+        String oql = "SELECT n "
+                    + " FROM NavigationItem n"
+                    + " WHERE n.parent = :parent"
+                    + "     AND n.position >= :position";
+        
+        oql += " ORDER BY n.position";
+        
+        JPAQuery query = NavigationItem.find(oql);
+        query.bind("parent", item);
+        query.bind("position",  pos);
         
         return query.fetch();
     }

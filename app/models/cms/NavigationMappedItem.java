@@ -1,5 +1,6 @@
 package models.cms;
 
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -24,4 +25,19 @@ public class NavigationMappedItem extends Model {
 
     @Column(nullable=false)
     public boolean redirect = false;
+    
+    public static NavigationMappedItem findBySourceAndLang(String source, String lang){
+        
+        String oql = " SELECT nmi"
+                    + " FROM   NavigationMappedItem nmi"
+                    + " WHERE  nmi.source = :source"
+                    + "     AND nmi.language = :lang";
+
+        JPAQuery query = NavigationMappedItem.find(oql);
+        
+        query.bind("source", source);
+        query.bind("lang", lang);
+        
+        return query.first();
+    }
 }
