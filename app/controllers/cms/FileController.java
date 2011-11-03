@@ -1,7 +1,6 @@
 package controllers.cms;
 
 import java.io.File;
-import play.Logger;
 import play.Play;
 import play.mvc.Controller;
 import plugins.router.Route;
@@ -24,7 +23,6 @@ public class FileController extends Controller {
             renderBinary(file);
         }
         else {
-            Logger.error("NOT FOUND: " + rootPath + filepath);
             error(404, "File not Found");
         }
     }
