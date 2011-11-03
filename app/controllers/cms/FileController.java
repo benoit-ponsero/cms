@@ -11,7 +11,7 @@ import plugins.router.Route;
  */
 public class FileController extends Controller {
     
-    @Route("/public/files/{filepath}")
+    @Route("/public/files/{<.+>filepath}")
     public static void files(String filepath) {
         
         String rootPath = Play.applicationPath.getAbsolutePath();
@@ -20,7 +20,7 @@ public class FileController extends Controller {
         
         File file = new File(rootPath, filepath);
         
-        if (file.exists()){
+        if (file.exists() && file.isFile()){
             renderBinary(file);
         }
         else {
