@@ -10,7 +10,8 @@ public class CmsContext {
     
     public static class Constant {
         
-        public static final String CMS_USER = "cms_userid";
+        public static final String CMS_USER          = "cms_userid";
+        public static final String CMS_SEO_PARAMETER = "cms_seo";
     }
     
     public String           requestedResource;

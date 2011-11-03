@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import models.cms.NavigationItem;
 import models.cms.NavigationMappedItem;
+import models.cms.SeoParameter;
 import models.cms.User;
 import models.cms.VirtualPage;
 import org.hibernate.Filter;
@@ -93,6 +94,7 @@ public class CmsFilter extends PlayPlugin {
         String lang     = Lang.get();
         String resource = Request.current().path;
         
+        RenderArgs renderArgs = RenderArgs.current();
         
         /**
          * handle navigation
@@ -102,16 +104,29 @@ public class CmsFilter extends PlayPlugin {
             
             resource = mappedItem.source;
         }
-        RenderArgs.current().put("__REQUESTED_RESOURCE", resource);
+        renderArgs.put("__REQUESTED_RESOURCE", resource); //deprecated
         cmsContext.requestedResource = resource;
         
         NavigationItem item = NavigationCache.get(resource);
         if (item != null){
-            RenderArgs.current().put("__CURRENT_NAVIGATION_ITEM", item);
+            renderArgs.put("__CURRENT_NAVIGATION_ITEM", item); //deprecated
             cmsContext.currentNavigationItem = item;
         }
         
-        RenderArgs.current().put("cms", cmsContext);
+        renderArgs.put("cms", cmsContext);
+        
+        /**
+         * handle seo parameter
+         */
+        
+        SeoParameter seo = SeoParameter.findByPathAndLang(resource, lang);
+        if (seo == null 
+                && item != null && item.navigationPlugin != null) {
+            
+            seo = item.navigationPlugin.findSeoParameter(resource, lang);
+        }
+        renderArgs.put(CmsContext.Constant.CMS_SEO_PARAMETER, seo);
+        
         
         /**
          * handle user
