@@ -1,5 +1,3 @@
-
-
     $(".cms_overlaybox").overlay({
         // custom top position
         top: '20%',
@@ -125,7 +123,7 @@
     })
     .bind("create.jstree", function (e, data) {
 
-        var ref = data.rslt.parent.attr("id").replace('nav', '');
+        var ref = data.rslt.parent.attr("id").replace('cms_nav', '');
         var pos = data.rslt.position;
         var name= data.rslt.name
 
@@ -155,7 +153,7 @@
                     type: 'POST',
                     url: '/--cms/navigation/remove',
                     data : {
-                        navid : this.id.replace('nav', '')
+                        navid : this.id.replace('cms_nav', '')
                     },
                     success : function (r) {
                         if(!r.status) {
@@ -169,7 +167,7 @@
     })
     .bind("rename.jstree", function (e, data) {
 
-        var id      = data.rslt.obj.attr("id").replace('nav', '');
+        var id      = data.rslt.obj.attr("id").replace('cms_nav', '');
         var newname = data.rslt.new_name;
 
         $.post('/--cms/navigation/rename', {
@@ -185,8 +183,8 @@
 
         data.rslt.o.each(function (i) {
 
-            var id = $(this).attr("id").replace('nav', '');
-            var ref= data.rslt.cr === -1 ? 1 : data.rslt.np.attr("id").replace('nav', '');
+            var id = $(this).attr("id").replace('cms_nav', '');
+            var ref= data.rslt.cr === -1 ? 1 : data.rslt.np.attr("id").replace('cms_nav', '');
             var pos= data.rslt.cp + i;
 
             // console.log('id:' + id + ", ref:" + ref + ", pos:" + pos);
@@ -202,7 +200,7 @@
     })
     .bind("select_node.jstree", function (e, data){
 
-        var id = data.rslt.obj.attr('id').replace('nav', '');
+        var id = data.rslt.obj.attr('id').replace('cms_nav', '');
         $("#cms-nav-result").hide();
         $("#cms_nav_edit").load('/--cms/navigation/edit', {
             navid:id

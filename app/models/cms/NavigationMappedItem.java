@@ -26,6 +26,11 @@ public class NavigationMappedItem extends Model {
     @Column(nullable=false)
     public boolean redirect = false;
     
+    public static List<NavigationMappedItem> findBySource(String path){
+        
+        return NavigationMappedItem.find("bySource", path).fetch();
+    }
+    
     public static NavigationMappedItem findBySourceAndLang(String source, String lang){
         
         String oql = " SELECT nmi"

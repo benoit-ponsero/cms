@@ -1,14 +1,14 @@
 <ul>
     #{if navItem.parent == null && !alreadyPassed}
     %{alreadyPassed = true}%
-    <li id="nav${navItem.id}">
+    <li id="cms_nav${navItem.id}">
         <a href="#" #{if navItem == openedNavItem}class="firstopened"#{/if}>${navItem.name}</a>
         #{include '/cms/arbo.html'/}
     </li>
     #{/if}
     #{else}
     #{list items : navItem.children, as : 'item'}
-    <li id="nav${item.id}" #{if item == openedNavItem}class="firstopened"#{/if}>
+    <li id="cms_nav${item.id}" #{if item == openedNavItem}class="firstopened"#{/if}>
         <a href="#">${item.name}</a>
         
         #{if item.children}

@@ -93,6 +93,7 @@ public class CmsController extends Controller {
             navigationItem.save();
             result.put("id", navigationItem.id);
             status = true;
+            
         }
         catch (Exception ex) {}
         
@@ -134,6 +135,12 @@ public class CmsController extends Controller {
         
         NavigationItem navItem= NavigationItem.findById(navid);
         if (navItem != null){
+            
+            List<NavigationMappedItem> mappedItems = NavigationMappedItem.findBySource(navItem.path);
+            for (NavigationMappedItem mappedItem : mappedItems){
+                
+                mappedItem.delete();
+            }
             
             navItem.delete();
             status = true;
