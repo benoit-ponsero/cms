@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 
+import models.cms.Domain;
 import models.cms.NavigationItem;
 import models.cms.NavigationMappedItem;
 import models.cms.VirtualPage;
@@ -18,22 +19,37 @@ import play.classloading.ApplicationClasses;
  */
 public class NavigationCache {
 
-    private static List<NavigationPlugin>               plugins         = new ArrayList<NavigationPlugin>();
+	private static Map<String, Domain>         domains		   = new HashMap<String, Domain>();
+	
+    private static List<NavigationPlugin>      plugins         = new ArrayList<NavigationPlugin>();
     
-    private static Map<String, NavigationItem>          items           = new HashMap<String, NavigationItem>();
-    private static Map<String, VirtualPage>             virtualPages    = new HashMap<String, VirtualPage>();
+    private static Map<String, NavigationItem> items           = new HashMap<String, NavigationItem>();
+    private static Map<String, VirtualPage>    virtualPages    = new HashMap<String, VirtualPage>();
     
     private static Map<String, Map<String, NavigationMappedItem>> mappedItemsByLangs = new HashMap<String, Map<String, NavigationMappedItem>>();
     
     
     public static void init() {
 
+		initDomains();
+		
         initVirtualPage();
         
         initNavigationItem();
         
         initNavigationMappedItem();
     }
+	
+	public static void initDomains(){
+		
+		domains.clear();
+		
+		List<Domain> dom = Domain.findAll();
+		for (Domain d : dom){
+			
+			domains.put(d.host, d);
+		}
+	}
     
     public static void initVirtualPage(){
         
@@ -175,6 +191,11 @@ public class NavigationCache {
         }
         
         return null;
+    }
+	
+	public static Domain getDomain (String host) {
+        
+        return domains.get(host);
     }
     
     

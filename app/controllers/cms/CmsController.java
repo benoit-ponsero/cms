@@ -55,6 +55,12 @@ public class CmsController extends Controller {
             renderTemplate(virtualPage.view);
         }
     }
+	
+	public static void pageNotFound(){
+				
+		notFound();
+	}
+	
     
     @Route("/navigation")
     public static void manageNavigation(String path){
@@ -264,6 +270,9 @@ public class CmsController extends Controller {
                 navItem.path   = newpath;
                 navItem.save();
                 
+				NavigationCache.initNavigationItem();
+				NavigationCache.initNavigationMappedItem();
+				NavigationCache.initVirtualPage();
                 success = true;
             }
             catch (Exception ex) {

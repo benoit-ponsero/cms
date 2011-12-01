@@ -5,6 +5,7 @@ import plugins.cms.navigation.NavigationCache;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URLDecoder;
+import models.cms.Domain;
 import models.cms.NavigationItem;
 import models.cms.NavigationMappedItem;
 import models.cms.SeoParameter;
@@ -31,12 +32,23 @@ public class CmsFilter extends PlayPlugin {
     @Override
     public void routeRequest(Request request) {
         
-        CmsContext.current.set(new CmsContext());
+		String resource = request.path;
+		if (skipRequest(resource)){
+			return;
+		}
         
+		/**
+		 * handle domain
+		 */
+		Domain domain = NavigationCache.getDomain(request.host);
+		if (domain == null){
+			
+			Logger.error("Domain not found: " + request.host);
+		}
+		
+		CmsContext.current.set(new CmsContext());
         String lang     = Lang.get();
-        String resource = request.path;
         
-       
         VirtualPage virtualPage = NavigationCache.getVirtualPage(resource);
         if (virtualPage != null){
             
@@ -58,6 +70,10 @@ public class CmsFilter extends PlayPlugin {
                 request.path = mappedItem.source;
             }
         }
+		else if (domain != null && !lang.equals(domain.defaultLocale) && !resource.equals("/")) {
+			
+			request.path = Router.reverse("cms.CmsController.pageNotFound").url;
+		}
     }
     
     @Override
@@ -65,6 +81,10 @@ public class CmsFilter extends PlayPlugin {
         
         Request request = Request.current();
         
+		if (skipRequest(request.path)){
+			return;
+		}
+		
         try {
             
             String uri      = request.url;
@@ -89,13 +109,22 @@ public class CmsFilter extends PlayPlugin {
     @Override
     public void beforeActionInvocation(Method method) {
         
-        CmsContext cmsContext = CmsContext.current();
+		RenderArgs	renderArgs	= RenderArgs.current();
+		CmsContext	cmsContext	= CmsContext.current();
+		Request		request		= Request.current();
         
-        String lang     = Lang.get();
-        String resource = Request.current().path;
-        
-        RenderArgs renderArgs = RenderArgs.current();
-        
+		renderArgs.put("cms", cmsContext);
+		
+		
+		String resource = request.path;
+		if (skipRequest(resource)){
+			
+			return;
+		}
+		
+		String lang     = Lang.get();
+		
+		
         /**
          * handle navigation
          */
@@ -104,6 +133,7 @@ public class CmsFilter extends PlayPlugin {
             
             resource = mappedItem.source;
         }
+		
         renderArgs.put("__REQUESTED_RESOURCE", resource); //deprecated
         cmsContext.requestedResource = resource;
         
@@ -113,12 +143,9 @@ public class CmsFilter extends PlayPlugin {
             cmsContext.currentNavigationItem = item;
         }
         
-        renderArgs.put("cms", cmsContext);
-        
         /**
          * handle seo parameter
-         */
-        
+         */        
         SeoParameter seo = SeoParameter.findByPathAndLang(resource, lang);
         if (seo == null 
                 && item != null && item.navigationPlugin != null) {
@@ -160,7 +187,6 @@ public class CmsFilter extends PlayPlugin {
         /**
          * handle hibernate filter
          */
-        
         try {
             
             org.hibernate.Session hibernateSession = ((org.hibernate.Session)JPA.em().getDelegate());
@@ -172,4 +198,12 @@ public class CmsFilter extends PlayPlugin {
         }
         catch (Exception ex) {}
     }
+	
+	
+	private boolean skipRequest (String path){
+		
+		return (path.startsWith("/public")
+				|| path.startsWith("/--cms/")
+                || path.startsWith("/admin"));
+	}
 }
