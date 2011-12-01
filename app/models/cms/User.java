@@ -1,13 +1,13 @@
 package models.cms;
 
 import java.util.List;
+import java.util.ArrayList;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import play.db.jpa.Model;
-
 
 /**
  * @author benoit
