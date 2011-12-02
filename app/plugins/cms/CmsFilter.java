@@ -13,6 +13,7 @@ import models.cms.User;
 import models.cms.VirtualPage;
 import org.hibernate.Filter;
 import play.Logger;
+import play.Play;
 import play.PlayPlugin;
 import play.db.jpa.JPA;
 import play.i18n.Lang;
@@ -28,6 +29,7 @@ import play.mvc.Scope.RenderArgs;
  */
 public class CmsFilter extends PlayPlugin {
 
+    private String cmsSkipPath = null;
     
     @Override
     public void routeRequest(Request request) {
@@ -36,6 +38,13 @@ public class CmsFilter extends PlayPlugin {
 		if (skipRequest(resource)){
 			return;
 		}
+        
+        CmsContext.current.set(new CmsContext());
+        String lang     = Lang.get();
+        
+        if (cmsSkipPath != null && resource.startsWith(cmsSkipPath)){
+            return;
+        }
         
 		/**
 		 * handle domain
@@ -46,9 +55,6 @@ public class CmsFilter extends PlayPlugin {
 			Logger.error("Domain not found: " + request.host);
 		}
 		
-		CmsContext.current.set(new CmsContext());
-        String lang     = Lang.get();
-        
         VirtualPage virtualPage = NavigationCache.getVirtualPage(resource);
         if (virtualPage != null){
             
@@ -198,12 +204,21 @@ public class CmsFilter extends PlayPlugin {
         }
         catch (Exception ex) {}
     }
+
+    @Override
+    public void onConfigurationRead() {
+        
+        cmsSkipPath = (String) Play.configuration.getProperty("cms.skipPath");
+    }
+
+    
 	
+    
 	
 	private boolean skipRequest (String path){
 		
 		return (path.startsWith("/public")
 				|| path.startsWith("/--cms/")
-                || path.startsWith("/admin"));
+        );
 	}
 }
