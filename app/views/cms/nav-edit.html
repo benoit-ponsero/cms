@@ -46,6 +46,13 @@
                     </td>
                 </tr>
                 #{/else}
+                <tr>
+                    <td>Visibilité</td>
+                    <td>
+                        <input id="navitem_active" type="checkbox" name="navitem_active" style="width:15px" ${(navItem.active) ? 'checked' : ''}/>
+                        <label for="navitem_active">public</label>
+                    </td>
+                </tr>
             </table>
 
             <hr/>

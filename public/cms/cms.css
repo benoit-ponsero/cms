@@ -20,6 +20,13 @@
     background: url(../images/html.png) center center no-repeat;
 }
 
+#cms_nav_urls label{
+    display: inline;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #000;
+    font-size: 12px;
+}
+
 
 div#cms_user.opened{
     background-color: #7A7A7A;

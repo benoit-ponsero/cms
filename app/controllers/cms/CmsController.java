@@ -14,6 +14,7 @@ import models.cms.SeoParameter;
 import models.cms.Translation;
 import models.cms.VirtualPage;
 import models.cms.VirtualPageTemplate;
+import play.i18n.Lang;
 import play.mvc.Controller;
 import play.mvc.Http.Cookie;
 import play.templates.JavaExtensions;
@@ -34,7 +35,7 @@ public class CmsController extends Controller {
     
     public static void redirectMappedItem(){
         
-        String lang     = "fr";//Lang.get();
+        String lang     = Lang.get();
         String resource = request.path;
         
         NavigationMappedItem mappedItem = NavigationCache.getMappedItem(lang, resource);
@@ -267,6 +268,14 @@ public class CmsController extends Controller {
                     seo.save();
                 }
                 
+                VirtualPage vp = VirtualPage.findByPath(navItem.path);
+                if (vp != null){
+                    
+                    vp.path = newpath;
+                    vp.save();
+                }
+                
+                navItem.active = (params.get("navitem_active") != null);
                 navItem.path   = newpath;
                 navItem.save();
                 
