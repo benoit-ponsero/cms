@@ -51,7 +51,7 @@ public class Tag {
         
         if (isCmsEditingAuthorized()
                 && (editor == null || editor.content.isEmpty())){
-            content += "Type your text here";   
+            content += CmsContext.Constant.CMS_EDITOR_DEFAULT;
         }
         else if (editor != null){
             content += editor.content;

@@ -12,6 +12,7 @@ public class CmsContext {
         
         public static final String CMS_USER          = "cms_userid";
         public static final String CMS_SEO_PARAMETER = "cms_seo";
+        public static final String CMS_EDITOR_DEFAULT= "Type your text here";
     }
     
     public String           requestedResource;

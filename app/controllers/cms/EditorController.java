@@ -9,9 +9,9 @@ import java.util.List;
 
 import models.cms.Editor;
 import play.Play;
-import play.Play.Mode;
 import play.data.Upload;
 import play.mvc.Controller;
+import plugins.cms.CmsContext;
 import plugins.router.Route;
 
 /**
@@ -51,7 +51,10 @@ public class EditorController extends Controller {
                 editor.language = lang;
             }
 
-            editor.content = content;
+            if (!CmsContext.Constant.CMS_EDITOR_DEFAULT.equals(content)){
+                editor.content = content;
+            }
+            
             editor.save();
         }
     }
